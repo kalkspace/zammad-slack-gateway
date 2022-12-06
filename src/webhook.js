@@ -1,4 +1,5 @@
 const { findChannel, slackEscape, postMessage } = require("./utils/slack");
+const { updateTicket } = require("./utils/zammad");
 
 /**
  * @param {Zammad.Webhook} payload
@@ -63,7 +64,7 @@ exports.handler = async (request) => {
   const payload = JSON.parse(request.body);
 
   const blocks = buildTicketBlocks(payload);
-  await postMessage(channel.id, {
+  const message = await postMessage(channel.id, {
     attachments: [
       {
         blocks,
@@ -71,6 +72,18 @@ exports.handler = async (request) => {
       },
     ],
   });
+  if (!message.ok) {
+    console.error("failed to post message:", message.error);
+    return { statusCode: 500 };
+  }
+
+  // persist reference to slack message in zammad
+  await updateTicket(payload.ticket.id, {
+    preferences: {
+      slack_ts: message.ts,
+    },
+  });
+
   return {
     statusCode: 200,
   };
