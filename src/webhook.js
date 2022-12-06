@@ -17,8 +17,13 @@ exports.handler = async (request) => {
     };
   }
 
+  if (!request.body) {
+    return { statusCode: 400 };
+  }
+
   // TODO verify signature
-  const payload = JSON.parse(request.body ?? "{}");
+  /** @type {Zammad.Webhook} */
+  const payload = JSON.parse(request.body);
 
   const sender = {
     type: "context",
