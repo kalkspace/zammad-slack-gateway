@@ -33,6 +33,7 @@ const findChannel = async (name) => {
   }
 };
 
+/** @type {import("@netlify/functions").Handler} */
 exports.handler = async (request) => {
   // TODO verify signature
   const payload = JSON.parse(request.body);
