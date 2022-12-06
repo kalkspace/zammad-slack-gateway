@@ -1,2 +1,9 @@
 [build]
 functions = "src"
+publish = "public"
+
+[[redirects]]
+from = "/"
+to = "https://github.com/kalkspace/zammad-slack-gateway"
+status = 301
+force = true
