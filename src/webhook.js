@@ -1,33 +1,4 @@
-const { WebClient: SlackClient } = require("@slack/web-api");
-
-const slackEscape = (text) => {
-  text = text.replaceAll("&", "&amp;");
-  text = text.replaceAll("<", "&lt;");
-  text = text.replaceAll(">", "&gt;");
-  return text;
-};
-
-const slackClient = new SlackClient(process.env.SLACK_TOKEN);
-
-/** @typedef {import("@slack/web-api").ConversationsInfoResponse["channel"]} Channel */
-
-/**
- * @param {string} name
- * @return {Promise<Channel>}
- */
-const findChannel = async (name) => {
-  const { channels } = await slackClient.conversations.list({
-    types: "public_channel,private_channel",
-  });
-  if (!channels) {
-    return;
-  }
-  for (const channel of channels) {
-    if (channel.name == name) {
-      return channel;
-    }
-  }
-};
+const { findChannel, slackEscape, postMessage } = require("./utils/slack");
 
 /** @type {import("@netlify/functions").Handler} */
 exports.handler = async (request) => {
@@ -77,8 +48,7 @@ exports.handler = async (request) => {
   };
   const blocks = [sender, header, body];
 
-  await slackClient.chat.postMessage({
-    channel: channel.id,
+  await postMessage(channel.id, {
     attachments: [
       {
         blocks,
