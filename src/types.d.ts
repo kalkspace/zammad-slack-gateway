@@ -35,7 +35,7 @@ declare namespace Zammad {
 
   export interface ExpandedTicket extends Ticket {
     created_by: User;
-    customer: Customer;
+    customer: User;
     group: Group;
     owner: User;
     organization: Organization;
@@ -55,39 +55,8 @@ declare namespace Zammad {
     fax: string;
     firstname: string;
     id: number;
-    lastname: string;
-    login: string;
-    mobile: string;
-    note: string;
-    organization: string;
-    organization_id: number;
-    out_of_office: boolean;
-    phone: string;
-    role_ids: number[];
-    roles: string[];
-    street: string;
-    updated_at: string;
-    updated_by: string;
-    updated_by_id: number;
-    verified: boolean;
-    vip: boolean;
-    web: string;
-    zip: string;
-  }
-
-  export interface Customer {
-    active: boolean;
-    address: string;
-    city: string;
-    country: string;
-    created_at: string;
-    created_by: string;
-    created_by_id: number;
-    department: string;
-    email: string;
-    fax: string;
-    firstname: string;
-    id: number;
+    image: string | null;
+    image_source: string | null;
     lastname: string;
     login: string;
     mobile: string;
