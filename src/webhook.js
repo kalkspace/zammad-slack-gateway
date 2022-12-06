@@ -16,8 +16,17 @@ const plaintextOptions = {
 /** @type {HtmlToTextOptionsExtended} */
 const slackMarkdownOptions = {
   formatters: {
-    // todo: bold and italic via slack markdown
-    slackLink: function (elem, walk, builder, formatOptions) {
+    slackBold: (elem, walk, builder, formatOptions) => {
+      builder.addInline("*");
+      walk(elem.children, builder);
+      builder.addInline("*");
+    },
+    slackItalic: (elem, walk, builder, formatOptions) => {
+      builder.addInline("_");
+      walk(elem.children, builder);
+      builder.addInline("_");
+    },
+    slackLink: (elem, walk, builder, formatOptions) => {
       const href = elem.attribs?.href;
       if (!href) {
         walk(elem.children, builder);
@@ -43,6 +52,10 @@ const slackMarkdownOptions = {
     },
   },
   selectors: [
+    { selector: "b", format: "slackBold" },
+    { selector: "strong", format: "slackBold" },
+    { selector: "i", format: "slackItalic" },
+    { selector: "em", format: "slackItalic" },
     { selector: "a", format: "slackLink" },
     { selector: "img", format: "skip" },
   ],
