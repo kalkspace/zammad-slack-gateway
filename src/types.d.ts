@@ -137,7 +137,7 @@ declare namespace Zammad {
   }
 
   export interface Article {
-    attachments: any[];
+    attachments: Attachment[];
     body: string;
     cc: any;
     content_type: string;
@@ -171,6 +171,23 @@ declare namespace Zammad {
     "is-auto-response"?: boolean;
     channel_id?: number;
     slack_ts?: string;
+  }
+
+  export interface Attachment {
+    id: number;
+    store_file_id: number;
+    filename: string;
+    size: string;
+    preferences: AttachmentMetadata;
+    url: string;
+  }
+
+  export interface AttachmentMetadata {
+    "content-alternative"?: boolean;
+    "original-format"?: boolean;
+    "Mime-Type"?: string;
+    Charset?: string;
+    "Content-Type"?: string;
   }
 }
 

@@ -117,6 +117,22 @@ const buildTicketBlocks = ({ ticket, article }) => {
   return [sender, header, body];
 };
 
+const iconForAttachment = (mimeType) => {
+  if (!mimeType) {
+    return "paperclip";
+  }
+  if (mimeType.startsWith("image/")) {
+    return "frame_with_picture";
+  }
+  if (mimeType.startsWith("text/")) {
+    return "memo";
+  }
+  if (mimeType.startsWith("application/")) {
+    return "closed_book";
+  }
+  return "paperclip";
+};
+
 /**
  * @param {Zammad.Webhook} payload
  * @returns {import("@slack/web-api").KnownBlock[]}
@@ -160,7 +176,32 @@ const buildArticleBlocks = ({ ticket, article }) => {
     }
   }
 
-  return [sender, body];
+  /** @type {import("@slack/web-api").KnownBlock[]} */
+  const attachments = [];
+
+  if (article.attachments) {
+    attachments.push(
+      { type: "divider" },
+      {
+        type: "context",
+        elements: [{ type: "plain_text", text: "Attachments" }],
+      }
+    );
+    for (const attachment of article.attachments) {
+      const icon = iconForAttachment(attachment.preferences["Mime-Type"]);
+      attachments.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:${icon}: <${attachment.url}|${slackEscape(
+            attachment.filename
+          )}>`,
+        },
+      });
+    }
+  }
+
+  return [sender, body, ...attachments];
 };
 
 /** @type {import("@netlify/functions").Handler} */
