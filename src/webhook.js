@@ -1,18 +1,27 @@
+const { htmlToText } = require("html-to-text");
 const { findChannel, slackEscape, postMessage } = require("./utils/slack");
 const { updateTicket } = require("./utils/zammad");
+
+/** @type {import("html-to-text").HtmlToTextOptions} */
+const plaintextOptions = {
+  selectors: [
+    { selector: "a", options: { ignoreHref: true } },
+    { selector: "img", format: "skip" },
+  ],
+};
 
 /**
  * @param {Zammad.Webhook} payload
  * @returns {import("@slack/web-api").KnownBlock[]}
  */
-const buildTicketBlocks = (payload) => {
+const buildTicketBlocks = ({ ticket, article }) => {
   /** @type {import("@slack/web-api").ContextBlock} */
   const sender = {
     type: "context",
     elements: [
       {
         type: "plain_text",
-        text: `${payload.ticket.customer.firstname} ${payload.ticket.customer.lastname} (${payload.ticket.customer.email})`,
+        text: `${ticket.customer.firstname} ${ticket.customer.lastname} (${ticket.customer.email})`,
       },
     ],
   };
@@ -22,17 +31,22 @@ const buildTicketBlocks = (payload) => {
     text: {
       type: "mrkdwn",
       text: `<https://kalkspace.zammad.com/#ticket/zoom/${
-        payload.ticket.id
-      }|*${slackEscape(payload.ticket.title)}*>`,
+        ticket.id
+      }|*${slackEscape(ticket.title)}*>`,
       verbatim: true,
     },
   };
+
+  const plainTextBody =
+    article.content_type == "text/html"
+      ? htmlToText(article.body, plaintextOptions)
+      : article.body;
   /** @type {import("@slack/web-api").SectionBlock} */
   const body = {
     type: "section",
     text: {
       type: "plain_text",
-      text: payload.article.body,
+      text: plainTextBody,
     },
   };
   return [sender, header, body];
