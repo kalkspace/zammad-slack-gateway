@@ -1,9 +1,5 @@
 const { WebClient: SlackClient } = require("@slack/web-api");
 
-const groupToSlackChannel = {
-  Users: "notify-zammad",
-};
-
 const slackEscape = (text) => {
   text = text.replaceAll("&", "&amp;");
   text = text.replaceAll("<", "&lt;");
@@ -35,12 +31,9 @@ const findChannel = async (name) => {
 
 /** @type {import("@netlify/functions").Handler} */
 exports.handler = async (request) => {
-  // TODO verify signature
-  const payload = JSON.parse(request.body);
-  const groupName = payload.ticket.group.name;
-  const channelName = groupToSlackChannel[groupName];
+  const channelName = request.queryStringParameters?.channel;
   if (!channelName) {
-    console.error("found no channel for Zammad group:", groupName);
+    console.error("no channel given in the query string");
     return {
       statusCode: 404,
     };
@@ -52,6 +45,9 @@ exports.handler = async (request) => {
       statusCode: 404,
     };
   }
+
+  // TODO verify signature
+  const payload = JSON.parse(request.body ?? "{}");
 
   const sender = {
     type: "context",
