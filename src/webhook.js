@@ -1,8 +1,8 @@
-const groupToSlackChannel = {
-  Users: "INSERT WEBHOOK URL HERE",
-};
+const { WebClient: SlackClient } = require("@slack/web-api");
 
-const { IncomingWebhook } = require("@slack/webhook");
+const groupToSlackChannel = {
+  Users: "notify-zammad",
+};
 
 const slackEscape = (text) => {
   text = text.replaceAll("&", "&amp;");
@@ -11,12 +11,42 @@ const slackEscape = (text) => {
   return text;
 };
 
+const slackClient = new SlackClient(process.env.SLACK_TOKEN);
+
+/** @typedef {import("@slack/web-api").ConversationsInfoResponse["channel"]} Channel */
+
+/**
+ * @param {string} name
+ * @return {Promise<Channel>}
+ */
+const findChannel = async (name) => {
+  const { channels } = await slackClient.conversations.list({
+    types: "public_channel,private_channel",
+  });
+  if (!channels) {
+    return;
+  }
+  for (const channel of channels) {
+    if (channel.name == name) {
+      return channel;
+    }
+  }
+};
+
 exports.handler = async (request) => {
   // TODO verify signature
   const payload = JSON.parse(request.body);
   const groupName = payload.ticket.group.name;
-  const slackWebhookUrl = groupToSlackChannel[groupName];
-  if (!slackWebhookUrl) {
+  const channelName = groupToSlackChannel[groupName];
+  if (!channelName) {
+    console.error("found no channel for Zammad group:", groupName);
+    return {
+      statusCode: 404,
+    };
+  }
+  const channel = await findChannel(channelName);
+  if (!channel?.id) {
+    console.error("unable to find slack channel:", channelName);
     return {
       statusCode: 404,
     };
@@ -41,7 +71,6 @@ exports.handler = async (request) => {
       verbatim: true,
     },
   };
-
   const body = {
     type: "section",
     text: {
@@ -49,11 +78,10 @@ exports.handler = async (request) => {
       text: payload.article.body,
     },
   };
-
   const blocks = [sender, header, body];
-  // Initialize
-  const webhook = new IncomingWebhook(slackWebhookUrl);
-  await webhook.send({
+
+  await slackClient.chat.postMessage({
+    channel: channel.id,
     attachments: [
       {
         blocks,
