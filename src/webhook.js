@@ -1,5 +1,42 @@
 const { findChannel, slackEscape, postMessage } = require("./utils/slack");
 
+/**
+ * @param {Zammad.Webhook} payload
+ * @returns {import("@slack/web-api").KnownBlock[]}
+ */
+const buildTicketBlocks = (payload) => {
+  /** @type {import("@slack/web-api").ContextBlock} */
+  const sender = {
+    type: "context",
+    elements: [
+      {
+        type: "plain_text",
+        text: `${payload.ticket.customer.firstname} ${payload.ticket.customer.lastname} (${payload.ticket.customer.email})`,
+      },
+    ],
+  };
+  /** @type {import("@slack/web-api").SectionBlock} */
+  const header = {
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: `<https://kalkspace.zammad.com/#ticket/zoom/${
+        payload.ticket.id
+      }|*${slackEscape(payload.ticket.title)}*>`,
+      verbatim: true,
+    },
+  };
+  /** @type {import("@slack/web-api").SectionBlock} */
+  const body = {
+    type: "section",
+    text: {
+      type: "plain_text",
+      text: payload.article.body,
+    },
+  };
+  return [sender, header, body];
+};
+
 /** @type {import("@netlify/functions").Handler} */
 exports.handler = async (request) => {
   const channelName = request.queryStringParameters?.channel;
@@ -25,34 +62,7 @@ exports.handler = async (request) => {
   /** @type {Zammad.Webhook} */
   const payload = JSON.parse(request.body);
 
-  const sender = {
-    type: "context",
-    elements: [
-      {
-        type: "plain_text",
-        text: `${payload.ticket.customer.firstname} ${payload.ticket.customer.lastname} (${payload.ticket.customer.email})`,
-      },
-    ],
-  };
-  const header = {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `<https://kalkspace.zammad.com/#ticket/zoom/${
-        payload.ticket.id
-      }|*${slackEscape(payload.ticket.title)}*>`,
-      verbatim: true,
-    },
-  };
-  const body = {
-    type: "section",
-    text: {
-      type: "plain_text",
-      text: payload.article.body,
-    },
-  };
-  const blocks = [sender, header, body];
-
+  const blocks = buildTicketBlocks(payload);
   await postMessage(channel.id, {
     attachments: [
       {
