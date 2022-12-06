@@ -5,7 +5,7 @@ const { updateTicket } = require("./utils/zammad");
 const COLOR_GREEN = "#87ecc3";
 const COLOR_GRAY = "#bfbfbf";
 
-/** @type {import("html-to-text").HtmlToTextOptions} */
+/** @type {HtmlToTextOptionsExtended} */
 const plaintextOptions = {
   selectors: [
     { selector: "a", options: { ignoreHref: true } },
@@ -13,10 +13,10 @@ const plaintextOptions = {
   ],
 };
 
-/** @type {import("html-to-text").HtmlToTextOptions} */
+/** @type {HtmlToTextOptionsExtended} */
 const slackMarkdownOptions = {
   formatters: {
-    // Create a formatter.
+    // todo: bold and italic via slack markdown
     slackLink: function (elem, walk, builder, formatOptions) {
       const href = elem.attribs?.href;
       if (!href) {
@@ -46,6 +46,11 @@ const slackMarkdownOptions = {
     { selector: "a", format: "slackLink" },
     { selector: "img", format: "skip" },
   ],
+  encodeCharacters: {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+  },
 };
 
 /**

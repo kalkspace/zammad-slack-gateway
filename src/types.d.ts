@@ -173,3 +173,8 @@ declare namespace Zammad {
     slack_ts?: string;
   }
 }
+
+// hotfix for html-to-text types
+declare type HtmlToTextOptionsExtended = {
+  encodeCharacters?: Record<string, string> | ((str: string) => string);
+} & import("html-to-text").HtmlToTextOptions;
