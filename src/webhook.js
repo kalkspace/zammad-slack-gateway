@@ -73,10 +73,11 @@ const slackMarkdownOptions = {
 
 /**
  * @param {Zammad.User} sender
+ * @param {string=} type
  * @returns {string}
  */
-const formatUser = (sender) => {
-  return `${sender.firstname} ${sender.lastname} (${sender.email})`;
+const formatUser = (sender, type) => {
+  return `${sender.firstname} ${sender.lastname} (${type || sender.email})`;
 };
 
 /**
@@ -143,6 +144,11 @@ const iconForAttachment = (mimeType) => {
  * @returns {import("@slack/web-api").KnownBlock[]}
  */
 const buildArticleBlocks = ({ ticket, article }) => {
+  const userText =
+    article.sender === "Agent"
+      ? formatUser(article.created_by, "Agent")
+      : formatUser(article.created_by);
+
   /** @type {import("@slack/web-api").SectionBlock} */
   const sender = {
     type: "section",
@@ -150,7 +156,7 @@ const buildArticleBlocks = ({ ticket, article }) => {
       type: "mrkdwn",
       text: `<https://kalkspace.zammad.com/#ticket/zoom/${
         ticket.id
-      }|*${slackEscape(formatUser(article.created_by))}*>`,
+      }|*${slackEscape(userText)}*>`,
       verbatim: true,
     },
   };
