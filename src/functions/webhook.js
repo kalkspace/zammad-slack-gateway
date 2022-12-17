@@ -192,7 +192,7 @@ const buildArticleBlocks = ({ ticket, article }) => {
   /** @type {import("@slack/web-api").KnownBlock[]} */
   const attachments = [];
 
-  if (article.attachments) {
+  if (article.attachments && article.attachments.length > 0) {
     attachments.push(
       { type: "divider" },
       {
