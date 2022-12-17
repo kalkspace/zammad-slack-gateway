@@ -41,6 +41,8 @@ exports.findChannel = async (name) => {
 exports.postMessage = async (channel, options) => {
   const resp = await slackClient.chat.postMessage({
     channel,
+    unfurl_links: false,
+    unfurl_media: false,
     ...options,
   });
   if (!resp.ok) {
