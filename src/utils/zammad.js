@@ -36,3 +36,9 @@ exports.updateTicket = async (id, update) => {
     throw new Error(`Failed to fetch (${resp.status}): ${await resp.text()}`);
   }
 };
+
+/**
+ * @param {string} id
+ * @returns {string}
+ */
+exports.imageURL = (id) => `https://${ZAMMAD_DOMAIN}/api/v1/users/image/${id}`;

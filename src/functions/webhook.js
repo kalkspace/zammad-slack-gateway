@@ -6,7 +6,7 @@ const {
   postMessage,
   fetchSingleMessage,
 } = require("../utils/slack");
-const { updateTicket, getTicket } = require("../utils/zammad");
+const { updateTicket, getTicket, imageURL } = require("../utils/zammad");
 const { createHmac } = require("crypto");
 
 const COLOR_GREEN = "#87ecc3";
@@ -83,6 +83,23 @@ const formatUser = (sender, type) => {
 };
 
 /**
+ * @param {Zammad.User} user
+ * @returns {import("@slack/types").ImageElement[]}
+ */
+const buildAvatarElement = (user) => {
+  if (!user.image) {
+    return [];
+  }
+  return [
+    {
+      type: "image",
+      alt_text: `Avatar for ${user.email}`,
+      image_url: imageURL(user.image),
+    },
+  ];
+};
+
+/**
  * @param {Zammad.Webhook} payload
  * @returns {import("@slack/web-api").KnownBlock[]}
  */
@@ -91,6 +108,7 @@ const buildTicketBlocks = ({ ticket, article }) => {
   const sender = {
     type: "context",
     elements: [
+      ...buildAvatarElement(ticket.customer),
       {
         type: "plain_text",
         text: formatUser(ticket.customer),
@@ -151,16 +169,19 @@ const buildArticleBlocks = ({ ticket, article }) => {
       ? formatUser(article.created_by, "Agent")
       : formatUser(article.created_by);
 
-  /** @type {import("@slack/web-api").SectionBlock} */
+  /** @type {import("@slack/web-api").ContextBlock} */
   const sender = {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `<https://kalkspace.zammad.com/#ticket/zoom/${
-        ticket.id
-      }|*${slackEscape(userText)}*>`,
-      verbatim: true,
-    },
+    type: "context",
+    elements: [
+      ...buildAvatarElement(article.created_by),
+      /** @type {import("@slack/web-api").MrkdwnElement} */ {
+        type: "mrkdwn",
+        text: `<https://kalkspace.zammad.com/#ticket/zoom/${
+          ticket.id
+        }|${slackEscape(userText)}>`,
+        verbatim: true,
+      },
+    ],
   };
 
   /** @type {import("@slack/web-api").SectionBlock} */
