@@ -1,4 +1,5 @@
 const { htmlToText } = require("html-to-text");
+const { getHeader } = require("../utils/http");
 const {
   findChannel,
   slackEscape,
@@ -6,6 +7,7 @@ const {
   fetchSingleMessage,
 } = require("../utils/slack");
 const { updateTicket, getTicket } = require("../utils/zammad");
+const { createHmac } = require("crypto");
 
 const COLOR_GREEN = "#87ecc3";
 const COLOR_GRAY = "#bfbfbf";
@@ -234,6 +236,24 @@ const startSlackThread = async (channel_id, payload) => {
 
 /** @type {import("@netlify/functions").Handler} */
 exports.handler = async (request) => {
+  const signature = getHeader(request.headers, "x-hub-signature");
+  if (!signature) {
+    return { statusCode: 401 };
+  }
+  if (!request.body) {
+    return { statusCode: 400 };
+  }
+  if (!process.env.WEBHOOK_SIGNATURE_SECRET) {
+    throw new Error("Missing WEBHOOK_SIGNATURE_SECRET env var.");
+  }
+  const hmac = createHmac("sha1", process.env.WEBHOOK_SIGNATURE_SECRET);
+  hmac.update(request.body);
+  const expectedSignature = `sha1=${hmac.digest("hex")}`;
+  console.log({ signature, expectedSignature });
+  if (signature !== expectedSignature) {
+    return { statusCode: 401 };
+  }
+
   const channelName = request.queryStringParameters?.channel;
   if (!channelName) {
     console.error("no channel given in the query string");
@@ -249,11 +269,6 @@ exports.handler = async (request) => {
     };
   }
 
-  if (!request.body) {
-    return { statusCode: 400 };
-  }
-
-  // TODO verify signature
   /** @type {Zammad.Webhook} */
   const payload = JSON.parse(request.body);
   const { article, ticket } = payload;
