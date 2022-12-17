@@ -39,8 +39,32 @@ exports.findChannel = async (name) => {
  * @returns {Promise<import("@slack/web-api").ChatPostMessageResponse>}
  */
 exports.postMessage = async (channel, options) => {
-  return slackClient.chat.postMessage({
+  const resp = await slackClient.chat.postMessage({
     channel,
     ...options,
   });
+  if (!resp.ok) {
+    console.error("failed to post message:", resp.error);
+    throw new Error("failed to post message");
+  }
+  return resp;
+};
+
+/**
+ * @param {string} channel
+ * @param {string} ts
+ * @returns {Promise<ArrayElement<import("@slack/web-api").ConversationsHistoryResponse["messages"]> | undefined>}
+ */
+exports.fetchSingleMessage = async (channel, ts) => {
+  const resp = await slackClient.conversations.history({
+    channel,
+    oldest: ts,
+    inclusive: true,
+    limit: 1,
+  });
+  if (!resp.ok) {
+    console.error("failed to fetch message:", resp.error);
+    throw new Error("failed to fetch message");
+  }
+  return resp.messages?.[0];
 };

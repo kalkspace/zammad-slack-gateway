@@ -1,6 +1,11 @@
 const { htmlToText } = require("html-to-text");
-const { findChannel, slackEscape, postMessage } = require("./utils/slack");
-const { updateTicket } = require("./utils/zammad");
+const {
+  findChannel,
+  slackEscape,
+  postMessage,
+  fetchSingleMessage,
+} = require("./utils/slack");
+const { updateTicket, getTicket } = require("./utils/zammad");
 
 const COLOR_GREEN = "#87ecc3";
 const COLOR_GRAY = "#bfbfbf";
@@ -204,6 +209,23 @@ const buildArticleBlocks = ({ ticket, article }) => {
   return [sender, body, ...attachments];
 };
 
+/**
+ * @param {string} channel_id
+ * @param {Zammad.Webhook} payload
+ * @returns {Promise<import("@slack/web-api").ChatPostMessageResponse>}
+ */
+const startSlackThread = async (channel_id, payload) => {
+  const blocks = buildTicketBlocks(payload);
+  return postMessage(channel_id, {
+    attachments: [
+      {
+        blocks,
+        color: COLOR_GREEN,
+      },
+    ],
+  });
+};
+
 /** @type {import("@netlify/functions").Handler} */
 exports.handler = async (request) => {
   const channelName = request.queryStringParameters?.channel;
@@ -228,31 +250,46 @@ exports.handler = async (request) => {
   // TODO verify signature
   /** @type {Zammad.Webhook} */
   const payload = JSON.parse(request.body);
+  const { article, ticket } = payload;
 
-  const blocks = buildTicketBlocks(payload);
-  const message = await postMessage(channel.id, {
-    attachments: [
-      {
-        blocks,
-        color: COLOR_GREEN,
-      },
-    ],
-  });
-  if (!message.ok) {
-    console.error("failed to post message:", message.error);
-    return { statusCode: 500 };
+  // re-fetch ticket since preferences are filtered on the webhook payload
+  /** @type {{ preferences: SpecialPreferences }} */
+  const { preferences } = await getTicket(ticket.id);
+  if (!preferences) {
+    throw new Error("Ticket not found");
   }
 
-  // persist reference to slack message in zammad
-  await updateTicket(payload.ticket.id, {
-    preferences: {
-      slack_ts: message.ts,
-    },
-  });
+  let message;
+  if (preferences.slack_gateway?.ts) {
+    message = await fetchSingleMessage(
+      channel.id,
+      preferences.slack_gateway.ts
+    );
+  }
+  if (!message) {
+    // also starts a new thread if we couldn't find the message for some reason
+    message = await startSlackThread(channel.id, payload);
+  }
 
-  await postMessage(channel.id, {
-    thread_ts: message.ts,
-    blocks: buildArticleBlocks(payload),
+  if (preferences.slack_gateway?.last_article_seen === article.id) {
+    // we've already posted this
+    // todo: find out what changed since we last saw the article
+    console.info("no new article found");
+  } else {
+    await postMessage(channel.id, {
+      thread_ts: message.ts,
+      blocks: buildArticleBlocks(payload),
+    });
+  }
+
+  // persist reference to slack message in zammad after completing posting
+  await updateTicket(ticket.id, {
+    preferences: /** @type {SpecialPreferences} */ ({
+      slack_gateway: {
+        ts: message.ts,
+        last_article_seen: article.id,
+      },
+    }),
   });
 
   return {

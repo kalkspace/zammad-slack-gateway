@@ -116,8 +116,10 @@ declare namespace Zammad {
     updated_by_id: number;
   }
 
-  export interface Preferences {
-    channel_id: number;
+  export interface Preferences extends Partial<Record<string, any>> {
+    "send-auto-response"?: boolean;
+    "is-auto-response"?: boolean;
+    channel_id?: number;
   }
 
   export interface Priority {
@@ -166,13 +168,6 @@ declare namespace Zammad {
     updated_by: User;
   }
 
-  export interface Preferences {
-    "send-auto-response"?: boolean;
-    "is-auto-response"?: boolean;
-    channel_id?: number;
-    slack_ts?: string;
-  }
-
   export interface Attachment {
     id: number;
     store_file_id: number;
@@ -191,7 +186,18 @@ declare namespace Zammad {
   }
 }
 
+type SpecialPreferences = Zammad.Preferences &
+  Partial<{
+    slack_gateway: Partial<{
+      ts: string;
+      last_article_seen: number;
+    }>;
+  }>;
+
 // hotfix for html-to-text types
 declare type HtmlToTextOptionsExtended = {
   encodeCharacters?: Record<string, string> | ((str: string) => string);
 } & import("html-to-text").HtmlToTextOptions;
+
+type ArrayElement<ArrayType extends readonly unknown[]> =
+  ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
