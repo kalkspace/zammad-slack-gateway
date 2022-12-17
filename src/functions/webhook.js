@@ -4,8 +4,8 @@ const {
   slackEscape,
   postMessage,
   fetchSingleMessage,
-} = require("./utils/slack");
-const { updateTicket, getTicket } = require("./utils/zammad");
+} = require("../utils/slack");
+const { updateTicket, getTicket } = require("../utils/zammad");
 
 const COLOR_GREEN = "#87ecc3";
 const COLOR_GRAY = "#bfbfbf";

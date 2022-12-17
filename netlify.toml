@@ -1,6 +1,6 @@
 [build]
-functions = "src"
-publish = "public"
+functions = "src/functions"
+publish = "src/public"
 
 [[redirects]]
 from = "/"
