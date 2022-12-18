@@ -193,7 +193,7 @@ const buildArticleBlocks = ({ ticket, article }) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: formattedBody,
+          text: formattedBody.substring(0, 3000),
           verbatim: true,
         },
       };
@@ -204,7 +204,7 @@ const buildArticleBlocks = ({ ticket, article }) => {
         type: "section",
         text: {
           type: "plain_text",
-          text: article.body,
+          text: article.body.substring(0, 3000),
         },
       };
     }
