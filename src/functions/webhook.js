@@ -207,7 +207,7 @@ const buildArticleBlocks = ({ ticket, article }) => {
         type: "section",
         text: {
           type: "plain_text",
-          text: article.body?.substring(0, 3000),
+          text: article.body?.substring(0, 3000) || "(Empty)",
         },
       };
     }
