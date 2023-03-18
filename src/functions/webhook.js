@@ -323,10 +323,15 @@ exports.handler = async (request) => {
   }
 
   if (Object.keys(article).length == 0) {
+    if (ticket.article_ids.length == 0) {
+      console.error("webhook for ticket without articles");
+      return {
+        statusCode: 200,
+      };
+    }
     // missing article, try to fetch by latest article ID
-    article = await getArticle(
-      ticket.article_ids[ticket.article_ids.length - 1]
-    );
+    const article_ids = [...ticket.article_ids].sort((a, b) => b - a);
+    article = await getArticle(article_ids[0]);
   }
 
   if (preferences.slack_gateway?.last_article_seen === article.id) {
