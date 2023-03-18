@@ -79,6 +79,9 @@ const slackMarkdownOptions = {
  * @returns {string}
  */
 const formatUser = (sender, type) => {
+  if (!sender) {
+    return `Unknown (${type || "unknown"})`;
+  }
   return `${sender.firstname} ${sender.lastname} (${type || sender.email})`;
 };
 
