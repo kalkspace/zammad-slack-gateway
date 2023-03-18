@@ -6,7 +6,12 @@ const {
   postMessage,
   fetchSingleMessage,
 } = require("../utils/slack");
-const { updateTicket, getTicket, imageURL } = require("../utils/zammad");
+const {
+  updateTicket,
+  getTicket,
+  getArticle,
+  imageURL,
+} = require("../utils/zammad");
 const { createHmac } = require("crypto");
 
 const COLOR_GREEN = "#87ecc3";
@@ -295,7 +300,8 @@ exports.handler = async (request) => {
 
   /** @type {Zammad.Webhook} */
   const payload = JSON.parse(request.body);
-  const { article, ticket } = payload;
+  const { ticket } = payload;
+  let { article } = payload;
 
   // re-fetch ticket since preferences are filtered on the webhook payload
   /** @type {{ preferences: SpecialPreferences }} */
@@ -314,6 +320,13 @@ exports.handler = async (request) => {
   if (!message) {
     // also starts a new thread if we couldn't find the message for some reason
     message = await startSlackThread(channel.id, payload);
+  }
+
+  if (Object.keys(article).length == 0) {
+    // missing article, try to fetch by latest article ID
+    article = await getArticle(
+      ticket.article_ids[ticket.article_ids.length - 1]
+    );
   }
 
   if (preferences.slack_gateway?.last_article_seen === article.id) {

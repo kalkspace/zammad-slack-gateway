@@ -37,6 +37,21 @@ exports.updateTicket = async (id, update) => {
   }
 };
 
+exports.getArticle = async (id) => {
+  const resp = await fetch(
+    `https://${ZAMMAD_DOMAIN}/api/v1/ticket_articles/${id}`,
+    {
+      headers: {
+        Authorization: `Token token=${process.env.ZAMMAD_TOKEN}`,
+      },
+    }
+  );
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch (${resp.status}): ${await resp.text()}`);
+  }
+  return resp.json();
+};
+
 /**
  * @param {string} id
  * @returns {string}
