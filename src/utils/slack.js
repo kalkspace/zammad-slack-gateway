@@ -20,15 +20,25 @@ exports.slackEscape = (text) => {
  * @return {Promise<Channel>}
  */
 exports.findChannel = async (name) => {
-  const { channels } = await slackClient.conversations.list({
-    types: "public_channel,private_channel",
-  });
-  if (!channels) {
-    return;
-  }
-  for (const channel of channels) {
-    if (channel.name == name) {
-      return channel;
+  let cursor;
+  while (true) {
+    const { channels, response_metadata } =
+      await slackClient.conversations.list({
+        types: "public_channel,private_channel",
+        cursor,
+      });
+    if (!channels || channels.length == 0) {
+      return;
+    }
+    for (const channel of channels) {
+      if (channel.name == name) {
+        return channel;
+      }
+    }
+
+    cursor = response_metadata?.next_cursor;
+    if (!cursor) {
+      return;
     }
   }
 };
